@@ -6,7 +6,7 @@ import random
 import math
 import time
 
-class IAPlayer(Player):
+class SmartPlayer(Player):
     # la profundidad maxima de busqueda (niveles en el arbol)
     max_depth = 3
     # tiempo maximo permitido por jugada en segundos
