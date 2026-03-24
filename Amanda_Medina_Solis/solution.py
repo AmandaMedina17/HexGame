@@ -7,8 +7,8 @@ import math
 import time
 
 class SmartPlayer(Player):
-    # la profundidad maxima de busqueda (niveles en el arbol)
-    max_depth = 3
+    # profundidad max de busqueda (niveles en el arbol)
+    max_depth = 5
     # tiempo maximo permitido por jugada en segundos
     time_limit = 5.0
 
@@ -17,7 +17,7 @@ class SmartPlayer(Player):
         Metodo principal que la IA usa para decidir su siguiente movimiento.
         Recibe el tablero actual y devuelve una tupla (fila, columna).
         """
-        # si el jugador no tiene ninguna ficha, es el primer movimiento
+        # si el jugador no tiene ninguna ficha es el primer movimiento
         if not self.get_player_positions(board, self.player_id):
             # jugar en el centro o una celda adyacente
             return self.get_center(board)
@@ -32,7 +32,7 @@ class SmartPlayer(Player):
         if block_move:
             return block_move
 
-        # 3. si no hay jugadas inmediatas, usar busqueda avanzada
+        # 3. si no hay jugadas inmediatas usar busqueda avanzada
         return self.iterative_deepening(board)
 
 
@@ -56,7 +56,7 @@ class SmartPlayer(Player):
 
     def get_center(self, board: HexBoard) -> tuple:
         """
-        intenta jugar en la celda central; si esta ocupada, elige una
+        intenta jugar en la celda central. si esta ocupada elige una
         celda vacia aleatoria entre las 6 adyacentes.
         si todo falla, devuelve la primera casilla vacia disponible.
         """
@@ -64,7 +64,7 @@ class SmartPlayer(Player):
         center = (size // 2, size // 2)
         if board.board[center[0]][center[1]] == 0:
             return center
-        # direcciones posibles en hex: 6 vecinos
+        # direcciones posibles en hex
         directions = [(-1,0), (1,0), (0,-1), (0,1), (-1,1), (1,-1)]
         random.shuffle(directions)
         for dr, dc in directions:
@@ -106,7 +106,7 @@ class SmartPlayer(Player):
 
     def calculate_min_distance_bfs01(self, board: HexBoard, player_id: int) -> float:
         """
-        implementa un bfs 0-1 para calcular la distancia minima (en terminos de
+        bfs  para calcular la distancia minima (en terminos de
         casillas vacias) que necesita el jugador 'player_id' para conectar sus dos lados.
 
         - las casillas propias tienen coste 0.
@@ -128,16 +128,16 @@ class SmartPlayer(Player):
             starts = [(0, j) for j in range(size) if board.board[0][j] != 3 - player_id]
             target = [(size-1, j) for j in range(size)]
 
-        # inicializar las celdas de inicio
+        #inicializar las celdas de inicio
         for (r, c) in starts:
             cost = 0 if board.board[r][c] == player_id else 1
             dist[r][c] = cost
             if cost == 0:
-                dq.appendleft((r, c))   # coste 0 va al frente de la cola
+                dq.appendleft((r, c))   #coste 0 va al frente de la cola
             else:
                 dq.append((r, c))        # coste 1 va al final
 
-        # direcciones posibles en el tablero hexagonal
+        #direcciones posibles
         directions = [(-1,0), (1,0), (0,-1), (0,1), (-1,1), (1,-1)]
 
         while dq:
@@ -145,7 +145,7 @@ class SmartPlayer(Player):
             for dr, dc in directions:
                 nr, nc = r + dr, c + dc
                 if 0 <= nr < size and 0 <= nc < size and board.board[nr][nc] != 3 - player_id:
-                    # coste adicional: 0 si es propia, 1 si es vacia
+                    # coste adicional: 0 si es propia y 1 si es vacia
                     new_cost = dist[r][c] + (0 if board.board[nr][nc] == player_id else 1)
                     if new_cost < dist[nr][nc]:
                         dist[nr][nc] = new_cost
@@ -154,16 +154,16 @@ class SmartPlayer(Player):
                         else:
                             dq.append((nr, nc))
 
-        # buscar la minima distancia entre todas las celdas objetivo
+        #buscar la minima distancia entre todas las celdas objetivo
         min_dist = np.inf
         for (r, c) in target:
             if not np.isinf(dist[r][c]):
                 min_dist = min(min_dist, dist[r][c])
-        # si no se encontro camino, devolver un valor grande (1000)
+        #si no se encontro camino, devolver un vaor grande (1000)
         return min_dist if not np.isinf(min_dist) else 1000
 
 
-    # generacion y ordenacion de movimientos candidatos
+    #generacion y ordenacion de movimientos candidatos
     def candidate_moves(self, board: HexBoard) -> list:
         """
         devuelve una lista de posibles movimientos (casillas vacias)
@@ -174,11 +174,11 @@ class SmartPlayer(Player):
         if not empty:
             return []
 
-        # obtener posiciones propias y del oponente
+        #obtener posiciones propias y del oponente
         my_positions = self.get_player_positions(board, self.player_id)
         opp_positions = self.get_player_positions(board, 3 - self.player_id)
 
-        # conjunto de celdas adyacentes a cualquier ficha (propia o del oponente)
+        #conjunto de celdas adyacentes a cualquier ficha (propia o del oponente)
         adjacent = set()
         for (r, c) in my_positions | opp_positions:
             for dr, dc in [(-1,0), (1,0), (0,-1), (0,1), (-1,1), (1,-1)]:
@@ -186,7 +186,7 @@ class SmartPlayer(Player):
                 if 0 <= nr < board.size and 0 <= nc < board.size and board.board[nr][nc] == 0:
                     adjacent.add((nr, nc))
 
-        # si hay pocas fichas en total, anadir tambien celdas alrededor del centro
+        #si hay pocas fichas en total annadir tambien celdas alrededor del centro
         total_pieces = len(my_positions) + len(opp_positions)
         if total_pieces < 5:
             center = board.size // 2
@@ -195,30 +195,29 @@ class SmartPlayer(Player):
                     if 0 <= r < board.size and 0 <= c < board.size and board.board[r][c] == 0:
                         adjacent.add((r, c))
 
-        # si no se encontro ninguna adyacente, devolver todas las vacias
+        #si no se encontro ninguna adyacente devolver todas las vacias
         if not adjacent:
             return list(empty)
 
-        # funcion de puntuacion para ordenar los movimientos
+        #funcion de puntuacion para ordenar los movimientos
         def move_score(move):
             r, c = move
-            # distancia al centro (manhattan, aunque en hex no es perfecta, pero sirve)
+            # distancia al centro
             center_dist = abs(r - board.size//2) + abs(c - board.size//2)
             # distancia a la ficha propia mas cercana
             if my_positions:
                 own_dist = min(abs(r - pr) + abs(c - pc) for (pr, pc) in my_positions)
             else:
                 own_dist = 0
-            # se prioriza la cercania a las propias (por eso se multiplica por 2)
+            # se prioriza la cercania a las propias 
             return own_dist * 2 + center_dist
 
-        # intersectamos las adyacentes con las vacias y ordenamos
         moves = list(adjacent & empty)
         moves.sort(key=move_score)
         return moves
 
 
-    # busqueda alfa-beta con profundidad iterativa
+    #busqueda alfa-beta con profundidad iterativa
     def iterative_deepening(self, board: HexBoard) -> tuple:
         """
         realiza busqueda aumentando la profundidad progresivamente hasta
@@ -228,16 +227,16 @@ class SmartPlayer(Player):
         start_time = time.time()
         best_move = None
         for depth in range(1, self.max_depth + 1):
-            # si hemos consumido el 90% del tiempo, paramos
+            #si hemos consumido el 90% del tiempo, paramos
             if time.time() - start_time > self.time_limit * 0.9:
                 break
             move, score = self.alpha_beta_search(board, depth, start_time)
             if move is not None:
                 best_move = move
-            # si encontramos una jugada que da la victoria, podemos terminar antes
+            #si encontramos una jugada que da la victoria, podemos terminar antes
             if score == math.inf:
                 break
-        # si no encontramos ningun movimiento (por tiempo), usamos el primer candidato
+        #si no encontramos ningun movimiento usamos el primer candidato
         return best_move if best_move else self.candidate_moves(board)[0]
 
     def alpha_beta_search(self, board: HexBoard, depth: int, start_time) -> tuple:
@@ -262,7 +261,7 @@ class SmartPlayer(Player):
                 best_value = value
                 best_move = move
             alpha = max(alpha, best_value)
-            if best_value >= beta:   # poda
+            if best_value >= beta:   #poda
                 break
         return (best_move, best_value)
 
@@ -285,7 +284,7 @@ class SmartPlayer(Player):
             new_board.place_piece(move[0], move[1], self.player_id)
             value = max(value, self.min_value(new_board, depth-1, alpha, beta, start_time))
             alpha = max(alpha, value)
-            if value >= beta:   # poda
+            if value >= beta:   #poda
                 break
         return value
 
@@ -308,6 +307,6 @@ class SmartPlayer(Player):
             new_board.place_piece(move[0], move[1], 3 - self.player_id)
             value = min(value, self.max_value(new_board, depth-1, alpha, beta, start_time))
             beta = min(beta, value)
-            if value <= alpha:   # poda
+            if value <= alpha:   #poda
                 break
         return value
